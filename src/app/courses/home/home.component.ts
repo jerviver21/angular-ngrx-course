@@ -1,10 +1,12 @@
 import {Component, OnInit} from '@angular/core';
 import {Course} from "../model/course";
 import {Observable} from "rxjs";
-import {filter, map, tap, withLatestFrom} from "rxjs/operators";
+import {filter, map, tap, withLatestFrom, first} from "rxjs/operators";
 import {CoursesService} from "../services/courses.service";
 import {AppState} from '../../reducers';
 import {select, Store} from '@ngrx/store';
+import { selectAllCourses, selectPromoTotal, selectAdvancedCources, selectBegineerCourses } from '../course.selector';
+import { FetchAllCourses } from '../course.action';
 @Component({
     selector: 'home',
     templateUrl: './home.component.html',
@@ -18,25 +20,18 @@ export class HomeComponent implements OnInit {
 
     advancedCourses$: Observable<Course[]>;
 
-    constructor(private coursesService: CoursesService, private store: Store<AppState>) {
+    constructor(private store: Store<AppState>) {
 
     }
 
     ngOnInit() {
+        this.store.dispatch(new FetchAllCourses());
+        
+        this.beginnerCourses$ = this.store.pipe( select(selectBegineerCourses) );
 
-        const courses$ = this.coursesService.findAllCourses();
+        this.advancedCourses$ = this.store.pipe( select(selectAdvancedCources) );
 
-        this.beginnerCourses$ = courses$.pipe(
-          map(courses => courses.filter(course => course.category === 'BEGINNER') )
-        );
-
-        this.advancedCourses$ = courses$.pipe(
-            map(courses => courses.filter(course => course.category === 'ADVANCED') )
-        );
-
-        this.promoTotal$ = courses$.pipe(
-            map(courses => courses.filter(course => course.promo).length)
-        );
+        this.promoTotal$ = this.store.pipe( select(selectPromoTotal) );
 
     }
 
